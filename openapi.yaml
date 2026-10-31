@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  title: Layanan Antrean dan Jadwal — Tan's Barbershop
+  version: 1.0.0
+  contact:
+    name: Kelompok Tan's Barbershop
+    email: kelompok@tansbarbershop.test
+  description: |
+    Kontrak API untuk melihat slot, menahan slot, dan membaca reservasi.
+    Dipakai oleh layanan booking (pelanggan online) dan staf untuk pelanggan walk-in.
+    Slot berdurasi 30 menit, pukul 10.00 sampai 20.00.
+    Semua galat dikembalikan dalam format Problem Details (RFC 9457).
+servers:
+  - url: http://localhost/api
+    description: Lingkungan lokal (Laravel Sail)
+tags:
+  - name: Antrean
+    description: Slot dan reservasi
+paths:
+  /v1/slot:
+    get:
+      tags: [Antrean]
+      operationId: daftarSlot
+      summary: Menampilkan seluruh slot pada satu tanggal beserta statusnya
+      description: Setiap slot berstatus kosong atau terisi, diurutkan menurut jam mulai.
+      parameters:
+        - name: tanggal
+          in: query
+          required: true
+          description: Tanggal yang ingin dilihat, format YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+            example: '2026-11-02'
+      responses:
+        '200':
+          description: Daftar slot pada tanggal tersebut
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Slot'
+        '422':
+          $ref: '#/components/responses/ValidasiGagal'
+  /v1/reservasi:
+    post:
+      tags: [Antrean]
+      operationId: tahanSlot
+      summary: Menahan satu slot untuk satu pelanggan
+      description: |
+        Mengembalikan 409 bila slot pada tanggal dan jam tersebut sudah terisi,
+        baik oleh pelanggan online maupun walk-in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservasiBaru'
+      responses:
+        '201':
+          description: Slot berhasil ditahan
+          headers:
+            Location:
+              description: URL reservasi yang baru dibuat
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservasiTunggal'
+        '409':
+          $ref: '#/components/responses/SlotTerisi'
+        '422':
+          $ref: '#/components/responses/ValidasiGagal'
+  /v1/reservasi/{kode}:
+    parameters:
+      - $ref: '#/components/parameters/Kode'
+    get:
+      tags: [Antrean]
+      operationId: detailReservasi
+      summary: Menampilkan satu reservasi berdasarkan kodenya
+      description: Mengembalikan 404 dalam format Problem Details bila kode tidak ada.
+      responses:
+        '200':
+          description: Detail reservasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservasiTunggal'
+        '404':
+          $ref: '#/components/responses/TidakDitemukan'
+components:
+  parameters:
+    Kode:
+      name: kode
+      in: path
+      required: true
+      description: Kode unik reservasi, misalnya RSV-0001
+      schema:
+        type: string
+        pattern: '^RSV-[0-9]{4}$'
+  schemas:
+    Slot:
+      type: object
+      required: [tanggal, jam_mulai, status]
+      properties:
+        tanggal:
+          type: string
+          format: date
+          example: '2026-11-02'
+        jam_mulai:
+          type: string
+          pattern: '^[0-9]{2}:[0-9]{2}$'
+          example: '10:00'
+        status:
+          type: string
+          enum: [kosong, terisi]
+    Reservasi:
+      type: object
+      required: [kode, tanggal, jam_mulai, nama_pelanggan, sumber, dibuat_pada]
+      properties:
+        kode:
+          type: string
+          example: RSV-0001
+        tanggal:
+          type: string
+          format: date
+          example: '2026-11-02'
+        jam_mulai:
+          type: string
+          example: '10:00'
+        nama_pelanggan:
+          type: string
+          example: Raka
+        sumber:
+          type: string
+          enum: [online, walk-in]
+        dibuat_pada:
+          type: string
+          format: date-time
+    ReservasiTunggal:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Reservasi'
+    ReservasiBaru:
+      type: object
+      required: [tanggal, jam_mulai, nama_pelanggan, sumber]
+      properties:
+        tanggal:
+          type: string
+          format: date
+        jam_mulai:
+          type: string
+          pattern: '^[0-9]{2}:[0-9]{2}$'
+        nama_pelanggan:
+          type: string
+          maxLength: 100
+        sumber:
+          type: string
+          enum: [online, walk-in]
+    Problem:
+      type: object
+      description: Problem Details sesuai RFC 9457
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: object
+          description: Rincian galat validasi per field (anggota tambahan)
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  responses:
+    TidakDitemukan:
+      description: Reservasi dengan kode tersebut tidak ada
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ValidasiGagal:
+      description: Isi permintaan tidak sesuai kontrak
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    SlotTerisi:
+      description: Slot pada tanggal dan jam tersebut sudah terisi
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://tansbarbershop.test/problem/slot-terisi
+            title: Slot sudah terisi
+            status: 409
+            detail: Slot 2026-11-02 pukul 10:00 sudah terisi.
+            instance: /api/v1/reservasi
