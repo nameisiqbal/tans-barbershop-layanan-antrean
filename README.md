@@ -1,58 +1,83 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Layanan Antrean dan Jadwal — Tan's Barbershop
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Proyek akhir Integrasi Sistem dan Komputasi Awan (25IF1504), STMIK Bandung.
+Layanan ini mengatur slot 30 menit pukul 10.00–20.00 dan memastikan satu slot
+tidak terpesan dua kali, baik oleh pelanggan online maupun walk-in.
 
-## About Laravel
+## Anggota dan pembagian tugas
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Anggota | NIM | Bagian yang dikerjakan |
+| --- | --- | --- |
+| Mohammad Iqbal Raharja Dwi Putra | 3222620 | Kontrak OpenAPI, kode layanan antrean, feature test, README |
+| Pandu Aria Legawa | 3222651 | (diisi oleh yang bersangkutan) |
+| Sandria Adlu Hakim | 3222658 | (diisi oleh yang bersangkutan) |
+| Tedy Irawan | 3222631 | (diisi oleh yang bersangkutan) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Cara menjalankan dari nol
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Prasyarat: Docker Desktop. Di Windows gunakan WSL2 dengan Ubuntu, dan letakkan proyek di folder rumah Linux (bukan di /mnt/c).
 
-## Learning Laravel
+1. Salin berkas lingkungan:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+        cp .env.example .env
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. Pasang dependensi (tidak perlu PHP di komputer):
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+        docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/app" composer:2 install --ignore-platform-reqs
 
-## Agentic Development
+3. Nyalakan layanan:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+        ./vendor/bin/sail up -d
 
-```bash
-composer require laravel/boost --dev
+4. Buat kunci aplikasi dan tabel basis data:
 
-php artisan boost:install
-```
+        ./vendor/bin/sail artisan key:generate
+        ./vendor/bin/sail artisan migrate
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+5. Jalankan test (hasil yang diharapkan: seluruhnya lulus):
 
-## Contributing
+        ./vendor/bin/sail artisan test
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+6. Periksa kontrak dengan Spectral (hasil yang diharapkan: tanpa error):
 
-## Code of Conduct
+        docker run --rm -v "$(pwd)":/work -w /work stoplight/spectral lint openapi.yaml
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Layanan berjalan di http://localhost. Bila port 80 sudah dipakai aplikasi lain, tambahkan
+APP_PORT=8000 di .env lalu nyalakan ulang.
 
-## Security Vulnerabilities
+## Kontrak API
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Kontrak lengkap ada di `openapi.yaml` (OpenAPI 3.1, ditulis design-first, lolos Spectral). Galat memakai format Problem Details (RFC 9457).
 
-## License
+| Operasi | Method dan path | Berhasil | Galat |
+| --- | --- | --- | --- |
+| daftarSlot | GET /api/v1/slot?tanggal=YYYY-MM-DD | 200, 20 slot beserta status | 422 |
+| tahanSlot | POST /api/v1/reservasi | 201 + header Location | 409 (slot terisi), 422 |
+| detailReservasi | GET /api/v1/reservasi/{kode} | 200 | 404 |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Aturan bisnis utama: satu slot (tanggal + jam) hanya boleh terisi sekali. Permintaan kedua pada slot yang sama dijawab 409 `slot-terisi`.
+
+## Kontrak event (rancangan, belum diimplementasikan)
+
+Jalur asinkron menghubungkan layanan antrean dengan layanan notifikasi (pengingat jadwal lewat WhatsApp).
+
+| Butir | Nilai |
+| --- | --- |
+| Nama event | SlotDitahan |
+| Penerbit | Layanan antrean (setelah tahanSlot berhasil, 201) |
+| Penerima | Layanan notifikasi |
+| Exchange | antrean.events (tipe topic, durable) |
+| Routing key | slot.ditahan |
+| Antrean penerima | notifikasi.slot_ditahan |
+
+Isi pesan (JSON):
+
+| Field | Tipe | Keterangan |
+| --- | --- | --- |
+| event_id | string (UUID) | Pengenal unik pesan, dipakai penerima agar pemrosesan ganda tidak berdampak |
+| terbit_pada | string (date-time) | Waktu event diterbitkan |
+| kode | string | Kode reservasi, misalnya RSV-0001 |
+| tanggal | string (date) | Tanggal slot, YYYY-MM-DD |
+| jam_mulai | string | Jam mulai slot, HH:MM |
+| nama_pelanggan | string | Nama pelanggan |
+| sumber | string | online atau walk-in |
