@@ -9,9 +9,9 @@ tidak terpesan dua kali, baik oleh pelanggan online maupun walk-in.
 | Anggota | NIM | Bagian yang dikerjakan |
 | --- | --- | --- |
 | Mohammad Iqbal Raharja Dwi Putra | 3222620 | Kontrak OpenAPI, kode layanan antrean, feature test, README |
-| Pandu Aria Legawa | 3222651 | (diisi oleh yang bersangkutan) |
-| Sandria Adlu Hakim | 3222658 | (diisi oleh yang bersangkutan) |
-| Tedy Irawan | 3222631 | (diisi oleh yang bersangkutan) |
+| Pandu Aria Legawa | 3222651 | Perancangan diagram arsitektur sistem (REST & Event, pengujian endpoint API manual |
+| Sandria Adlu Hakim | 3222658 | Analisis kriteria integrasi aplikasi (Hohpe & Woolf), identifikasi silo data mitra |
+| Tedy Irawan | 3222631 | Spesifikasi kontrak event SlotDitahan, konfirgurasi Docker & RabbitMQ |
 
 ## Cara menjalankan dari nol
 
