@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Events\SlotDitahan;
 use App\Models\Reservasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
@@ -13,6 +15,14 @@ use Tests\TestCase;
 class ReservasiApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Test kontrak REST tidak boleh bergantung pada RabbitMQ.
+        Event::fake([SlotDitahan::class]);
+    }
 
     private function reservasiContoh(string $jam = '10:00'): Reservasi
     {

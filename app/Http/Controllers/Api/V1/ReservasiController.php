@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Events\SlotDitahan;
 use App\Exceptions\SlotTerisi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DaftarSlotRequest;
@@ -55,6 +56,15 @@ class ReservasiController extends Controller
 
             return $baru;
         });
+
+        // Slot sudah tersimpan: umumkan faktanya ke layanan lain lewat message broker.
+        SlotDitahan::dispatch(
+            $reservasi->kode,
+            $reservasi->tanggal->format('Y-m-d'),
+            $reservasi->jam_mulai,
+            $reservasi->nama_pelanggan,
+            $reservasi->sumber,
+        );
 
         return (new ReservasiResource($reservasi))
             ->response()
