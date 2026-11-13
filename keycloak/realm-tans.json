@@ -1,0 +1,61 @@
+{
+  "realm": "tans-barbershop",
+  "enabled": true,
+  "accessTokenLifespan": 300,
+  "clientScopes": [
+    {
+      "name": "antrean:baca",
+      "description": "Membaca daftar slot dan detail reservasi",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
+    },
+    {
+      "name": "antrean:tulis",
+      "description": "Membuat dan menahan reservasi slot baru",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "kiosk",
+      "name": "Kiosk & Kasir Tans Barbershop",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "rahasia-kiosk-ganti-di-produksi",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": ["antrean:baca", "antrean:tulis"],
+      "protocolMappers": [
+        {
+          "name": "audience-layanan-antrean",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "layanan-antrean", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    },
+    {
+      "clientId": "monitor",
+      "name": "Monitor Layar Ruang Tunggu",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "rahasia-monitor-ganti-di-produksi",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": ["antrean:baca"],
+      "protocolMappers": [
+        {
+          "name": "audience-layanan-antrean",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "layanan-antrean", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    }
+  ]
+}

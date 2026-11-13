@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+
+    'oidc' => [
+        'issuer' => env('OIDC_ISSUER', 'http://localhost:8080/realms/tans-barbershop'),
+        'audience' => env('OIDC_AUDIENCE', 'layanan-antrean'),
+        'jwks_url' => env('OIDC_JWKS_URL', 'http://keycloak:8080/realms/tans-barbershop/protocol/openid-connect/certs'),
+        'jwks_cache_ttl' => (int) env('OIDC_JWKS_CACHE_TTL', 3600),
+    ],
 ];
