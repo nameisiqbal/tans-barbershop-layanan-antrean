@@ -6,6 +6,7 @@ use App\Events\SlotDitahan;
 use App\Models\Reservasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Tests\Concerns\InteractsWithJwt;
 use Tests\TestCase;
 
 /**
@@ -14,11 +15,14 @@ use Tests\TestCase;
  */
 class ReservasiApiTest extends TestCase
 {
+    use InteractsWithJwt;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->siapkanJwksPalsu();
+        $this->withToken($this->buatToken());
 
         // Test kontrak REST tidak boleh bergantung pada RabbitMQ.
         Event::fake([SlotDitahan::class]);

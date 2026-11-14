@@ -45,8 +45,14 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Slot'
+        '401':
+          $ref: '#/components/responses/TidakTerautentikasi'
+        '403':
+          $ref: '#/components/responses/AksesDitolak'
         '422':
           $ref: '#/components/responses/ValidasiGagal'
+        '429':
+          $ref: '#/components/responses/TerlaluBanyakPermintaan'
   /v1/reservasi:
     post:
       tags: [Antrean]
@@ -75,8 +81,14 @@ paths:
                 $ref: '#/components/schemas/ReservasiTunggal'
         '409':
           $ref: '#/components/responses/SlotTerisi'
+        '401':
+          $ref: '#/components/responses/TidakTerautentikasi'
+        '403':
+          $ref: '#/components/responses/AksesDitolak'
         '422':
           $ref: '#/components/responses/ValidasiGagal'
+        '429':
+          $ref: '#/components/responses/TerlaluBanyakPermintaan'
   /v1/reservasi/{kode}:
     parameters:
       - $ref: '#/components/parameters/Kode'
@@ -92,9 +104,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReservasiTunggal'
+        '401':
+          $ref: '#/components/responses/TidakTerautentikasi'
+        '403':
+          $ref: '#/components/responses/AksesDitolak'
         '404':
           $ref: '#/components/responses/TidakDitemukan'
+        '429':
+          $ref: '#/components/responses/TerlaluBanyakPermintaan'
+security:
+  - bearerAuth: []
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token akses JWT (RS256) yang diterbitkan oleh Keycloak realm `tans-barbershop`
+        dengan klaim audience `layanan-antrean` dan scope `antrean:baca` atau `antrean:tulis`.
   parameters:
     Kode:
       name: kode
@@ -214,3 +243,45 @@ components:
             status: 409
             detail: Slot 2026-11-02 pukul 10:00 sudah terisi.
             instance: /api/v1/reservasi
+
+    TidakTerautentikasi:
+      description: Token Bearer tidak disertakan, tidak valid, atau sudah kedaluwarsa
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            example: Bearer realm="layanan-antrean"
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://tansbarbershop.test/problem/tidak-terautentikasi
+            title: Tidak Terautentikasi
+            status: 401
+            detail: Token Bearer wajib disertakan pada header Authorization.
+            instance: /api/v1/slot
+    AksesDitolak:
+      description: Token valid tetapi tidak memiliki scope yang diperlukan
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://tansbarbershop.test/problem/akses-ditolak
+            title: Akses Ditolak
+            status: 403
+            detail: "Token tidak memiliki scope yang diperlukan: antrean:tulis."
+            instance: /api/v1/reservasi
+    TerlaluBanyakPermintaan:
+      description: Batas laju permintaan per menit untuk klien telah terlampaui
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://tansbarbershop.test/problem/terlalu-banyak-permintaan
+            title: Terlalu Banyak Permintaan
+            status: 429
+            detail: Batas laju permintaan per menit untuk klien ini telah terlampaui.
+            instance: /api/v1/slot

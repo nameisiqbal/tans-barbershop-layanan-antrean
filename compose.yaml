@@ -64,6 +64,18 @@ services:
             test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
             retries: 3
             timeout: 5s
+    keycloak:
+        image: 'quay.io/keycloak/keycloak:26.0'
+        command: start-dev --import-realm
+        ports:
+            - '${FORWARD_KEYCLOAK_PORT:-8080}:8080'
+        environment:
+            KC_BOOTSTRAP_ADMIN_USERNAME: admin
+            KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+        volumes:
+            - './keycloak/realm-tans.json:/opt/keycloak/data/import/realm-tans.json'
+        networks:
+            - sail
 networks:
     sail:
         driver: bridge

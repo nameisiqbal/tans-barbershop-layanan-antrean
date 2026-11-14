@@ -8,11 +8,20 @@ use App\Messaging\RabbitPublisher;
 use App\Models\Reservasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Tests\Concerns\InteractsWithJwt;
 use Tests\TestCase;
 
 class EventSlotTest extends TestCase
 {
+    use InteractsWithJwt;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->siapkanJwksPalsu();
+        $this->withToken($this->buatToken());
+    }
 
     private function permintaan(string $nama = 'Raka', string $sumber = 'online'): array
     {
